@@ -11,6 +11,7 @@ try:
     import cv2
 except ImportError:
     st.error("مكتبة 'opencv-python-headless' غير مثبتة بشكل صحيح. يرجى التأكد من تثبيتها.")
+    st.stop()
 
 # تحديد المسار لحفظ الملفات المرفوعة
 UPLOAD_FOLDER = 'uploads/'
@@ -124,3 +125,6 @@ def analyze_video(video_path, output_video_path):
     cap.release()
     out.release()
     cv2.destroyAllWindows()
+
+# تأكد من أن المكتبات النظامية المطلوبة مثبتة
+st.info("إذا استمرت المشكلة، يرجى التأكد من أن مكتبات النظام مثل libgl1-mesa-glx مثبتة بشكل صحيح باستخدام ملف apt.txt.")
