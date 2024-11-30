@@ -66,6 +66,28 @@ def analyze_video(video_path, output_video_path):
     out.release()
     cv2.destroyAllWindows()
 
+# دالة لتحليل الصور باستخدام النماذج الثلاثة
+def analyze_image(image_path, output_image_path):
+    device = 'cuda' if torch and torch.cuda.is_available() else 'cpu'
+    st.write(f"باستخدام الجهاز: {device}")
+    
+    image = cv2.imread(image_path)
+    if image is None:
+        raise Exception("فشل في فتح ملف الصورة.")
+
+    try:
+        annotated_image = image
+        # تمرير الصورة عبر النماذج الثلاثة
+        for model in yolo_models:
+            results = model.predict(image, device=device, conf=0.5, verbose=False)
+            st.text(f"نتائج التنبؤ للصورة: {results}")
+            annotated_image = np.array(results[0].plot())
+
+        # حفظ الصورة المعالجة
+        cv2.imwrite(output_image_path, annotated_image)
+    except Exception as e:
+        st.error(f"خطأ في معالجة الصورة: {e}")
+
 # تحميل نماذج YOLOv8 المدربة من مستودع GitHub
 model_urls = [
     'https://github.com/Hussam247824/project/raw/master/best(3).pt',
@@ -104,24 +126,24 @@ if numpy_available:
         except Exception as e:
             st.error(f"فشل في تحميل النموذج {model_name}: {e}")
 
-# الصفحة الرئيسية لرفع الفيديو أو تشغيل الكاميرا
-st.title("رفع فيديو لتحليله أو تشغيل الكاميرا")
+# الصفحة الرئيسية لرفع الفيديو أو الصور
+st.title("رفع فيديو أو صورة لتحليلها")
 
-# نموذج لرفع الفيديو
-uploaded_video = st.file_uploader("اختر فيديو لرفعه وتحليله", type=["mp4", "avi", "mov", "mkv"])
+# نموذج لرفع الفيديو أو الصورة
+uploaded_file = st.file_uploader("اختر فيديو أو صورة لرفعها وتحليلها", type=["mp4", "avi", "mov", "mkv", "jpg", "jpeg", "png"])
 
-# معالجة رفع الفيديو وتحليله
-if uploaded_video is not None:
-    mime_type, _ = mimetypes.guess_type(uploaded_video.name)
-    if not mime_type or not mime_type.startswith('video'):
-        st.error("يرجى رفع ملف فيديو صحيح.")
-    else:
+# معالجة رفع الفيديو أو الصورة وتحليلها
+if uploaded_file is not None:
+    mime_type, _ = mimetypes.guess_type(uploaded_file.name)
+    if not mime_type:
+        st.error("يرجى رفع ملف صحيح.")
+    elif mime_type.startswith('video'):
         # حفظ الفيديو المرفوع في مجلد مؤقت
         with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-            tmp_file.write(uploaded_video.read())
+            tmp_file.write(uploaded_file.read())
             video_path = tmp_file.name
 
-        st.video(uploaded_video)
+        st.video(uploaded_file)
         st.write(f"تم حفظ الفيديو في المسار: {video_path}")
 
         # تحليل الفيديو إذا كانت النماذج محملة وcv2 وnumpy متاحة
@@ -137,6 +159,30 @@ if uploaded_video is not None:
             st.error("مكتبة OpenCV غير متاحة، لا يمكن تحليل الفيديو.")
         elif not numpy_available:
             st.error("مكتبة numpy غير متاحة، لا يمكن تحليل الفيديو.")
+        else:
+            st.error("فشل في تحميل النماذج، يرجى المحاولة لاحقاً.")
+    elif mime_type.startswith('image'):
+        # حفظ الصورة المرفوعة في مجلد مؤقت
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp_file:
+            tmp_file.write(uploaded_file.read())
+            image_path = tmp_file.name
+
+        st.image(uploaded_file)
+        st.write(f"تم حفظ الصورة في المسار: {image_path}")
+
+        # تحليل الصورة إذا كانت النماذج محملة وcv2 وnumpy متاحة
+        if yolo_models and cv2_available and numpy_available:
+            try:
+                output_image_path = os.path.join(UPLOAD_FOLDER, 'output_image.jpg')
+                analyze_image(image_path, output_image_path)
+                st.success("تم تحليل الصورة بنجاح!")
+                st.image(output_image_path)
+            except Exception as e:
+                st.error(f"حدث خطأ أثناء تحليل الصورة: {e}")
+        elif not cv2_available:
+            st.error("مكتبة OpenCV غير متاحة، لا يمكن تحليل الصورة.")
+        elif not numpy_available:
+            st.error("مكتبة numpy غير متاحة، لا يمكن تحليل الصورة.")
         else:
             st.error("فشل في تحميل النماذج، يرجى المحاولة لاحقاً.")
 
