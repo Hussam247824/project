@@ -104,12 +104,12 @@ if numpy_available:
         # تنزيل النموذج إذا لم يكن موجودًا محليًا
         if not os.path.exists(model_path):
             try:
-                st.info(f"جاري تنزيل النموذج: {model_name}")
+                
                 response = requests.get(url)
                 if response.status_code == 200:
                     with open(model_path, 'wb') as f:
                         f.write(response.content)
-                    st.success(f"تم تنزيل النموذج بنجاح: {model_name}")
+                    
                 else:
                     st.error(f"فشل في تنزيل النموذج {model_name}: حالة الاستجابة {response.status_code}")
                     continue
@@ -122,7 +122,7 @@ if numpy_available:
             from ultralytics import YOLO
             model = YOLO(model_path).to('cuda' if torch.cuda.is_available() else 'cpu')
             yolo_models.append(model)
-            st.success(f"تم تحميل النموذج بنجاح: {model_name}")
+            
         except Exception as e:
             st.error(f"فشل في تحميل النموذج {model_name}: {e}")
 
@@ -144,7 +144,7 @@ if uploaded_file is not None:
             video_path = tmp_file.name
 
         st.video(uploaded_file)
-        st.write(f"تم حفظ الفيديو في المسار: {video_path}")
+        
 
         # تحليل الفيديو إذا كانت النماذج محملة وcv2 وnumpy متاحة
         if yolo_models and cv2_available and numpy_available:
@@ -168,7 +168,7 @@ if uploaded_file is not None:
             image_path = tmp_file.name
 
         st.image(uploaded_file)
-        st.write(f"تم حفظ الصورة في المسار: {image_path}")
+        
 
         # تحليل الصورة إذا كانت النماذج محملة وcv2 وnumpy متاحة
         if yolo_models and cv2_available and numpy_available:
