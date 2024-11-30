@@ -58,7 +58,6 @@ def analyze_video(video_path, output_video_path):
             out.write(annotated_frame)
             frame_count += 1
         except Exception as e:
-            st.error(f"خطأ في معالجة الإطار {frame_count}: {e}")
             break
 
     cap.release()
@@ -136,8 +135,6 @@ if uploaded_file is not None:
             tmp_file.write(uploaded_file.read())
             video_path = tmp_file.name
 
-        st.video(uploaded_file)
-        
         # تحليل الفيديو إذا كانت النماذج محملة وcv2 وnumpy متاحة
         if yolo_models and cv2_available and numpy_available:
             try:
@@ -159,8 +156,6 @@ if uploaded_file is not None:
             tmp_file.write(uploaded_file.read())
             image_path = tmp_file.name
 
-        st.image(uploaded_file)
-        
         # تحليل الصورة إذا كانت النماذج محملة وcv2 وnumpy متاحة
         if yolo_models and cv2_available and numpy_available:
             try:
