@@ -35,7 +35,7 @@ def analyze_image(image_path):
         # تمرير الصورة عبر النماذج الثلاثة
         for model in yolo_models:
             results = model.predict(image, device=device, conf=0.5, verbose=False)
-            annotated_image = np.array(results[0].plot())
+            annotated_image = results[0].plot()
 
         return annotated_image
     except Exception as e:
@@ -88,7 +88,7 @@ if uploaded_file is not None:
         st.error("يرجى رفع ملف صحيح.")
     elif mime_type.startswith('image'):
         # حفظ الصورة المرفوعة في مجلد مؤقت
-        with tempfile.NamedTemporaryFile(delete=True, suffix='.jpg') as tmp_file:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp_file:
             tmp_file.write(uploaded_file.read())
             image_path = tmp_file.name
 
