@@ -15,7 +15,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 if 'models' not in st.session_state:
     model_paths = [
         'https://huggingface.co/spaces/Hussam54545/video-analysis-app/resolve/main/best_v11_100epoch.pt',
-        'https://huggingface.co/spaces/Hussam54545/video-analysis-app/resolve/main/best(3).pt',
+        'https://github.com/Hussam247824/project/blob/master/best100epochs.pt',
         'https://huggingface.co/spaces/Hussam54545/video-analysis-app/resolve/main/best100epochs.pt'
     ]
 
