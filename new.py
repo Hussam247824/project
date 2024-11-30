@@ -4,15 +4,6 @@ import torch
 import tempfile
 import mimetypes
 import requests
-
-# تثبيت مكتبة ultralytics إذا لم تكن مثبتة بالفعل
-try:
-    from ultralytics import YOLO
-except ModuleNotFoundError:
-    st.warning("مكتبة 'ultralytics' غير مثبتة. سيتم تثبيتها الآن...")
-    os.system('pip install ultralytics')
-    from ultralytics import YOLO
-
 import cv2
 
 # تحديد المسار لحفظ الملفات المرفوعة
@@ -49,6 +40,7 @@ for url in model_urls:
 
     # تحميل النموذج
     try:
+        from ultralytics import YOLO
         model = YOLO(model_path).to('cuda' if torch.cuda.is_available() else 'cpu')
         yolo_models.append(model)
         st.success(f"تم تحميل النموذج بنجاح: {model_name}")
