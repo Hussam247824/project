@@ -30,7 +30,6 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 def analyze_video(video_path, output_video_path):
     device = 'cuda' if torch and torch.cuda.is_available() else 'cpu'
     
-    
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise Exception("فشل في فتح ملف الفيديو.")
@@ -70,7 +69,6 @@ def analyze_video(video_path, output_video_path):
 def analyze_image(image_path, output_image_path):
     device = 'cuda' if torch and torch.cuda.is_available() else 'cpu'
     
-    
     image = cv2.imread(image_path)
     if image is None:
         raise Exception("فشل في فتح ملف الصورة.")
@@ -104,17 +102,13 @@ if numpy_available:
         # تنزيل النموذج إذا لم يكن موجودًا محليًا
         if not os.path.exists(model_path):
             try:
-                
                 response = requests.get(url)
                 if response.status_code == 200:
                     with open(model_path, 'wb') as f:
                         f.write(response.content)
-                    
                 else:
-                    st.error(f"فشل في تنزيل النموذج {model_name}: حالة الاستجابة {response.status_code}")
                     continue
             except Exception as e:
-                st.error(f"فشل في تنزيل النموذج {model_name}: {e}")
                 continue
 
         # تحميل النموذج
@@ -122,9 +116,8 @@ if numpy_available:
             from ultralytics import YOLO
             model = YOLO(model_path).to('cuda' if torch.cuda.is_available() else 'cpu')
             yolo_models.append(model)
-            
         except Exception as e:
-            st.error(f"فشل في تحميل النموذج {model_name}: {e}")
+            continue
 
 # الصفحة الرئيسية لرفع الفيديو أو الصور
 st.title("رفع فيديو أو صورة لتحليلها")
@@ -145,7 +138,6 @@ if uploaded_file is not None:
 
         st.video(uploaded_file)
         
-
         # تحليل الفيديو إذا كانت النماذج محملة وcv2 وnumpy متاحة
         if yolo_models and cv2_available and numpy_available:
             try:
@@ -169,7 +161,6 @@ if uploaded_file is not None:
 
         st.image(uploaded_file)
         
-
         # تحليل الصورة إذا كانت النماذج محملة وcv2 وnumpy متاحة
         if yolo_models and cv2_available and numpy_available:
             try:
@@ -186,5 +177,30 @@ if uploaded_file is not None:
         else:
             st.error("فشل في تحميل النماذج، يرجى المحاولة لاحقاً.")
 
-# تأكد من أن المكتبات النظامية المطلوبة مثبتة
+# زر لتشغيل الكاميرا وتحليل الفيديو المباشر
+if cv2_available and yolo_models:
+    if st.button("تشغيل الكاميرا"):
+        cap = cv2.VideoCapture(0)
+        if not cap.isOpened():
+            st.error("فشل في فتح الكاميرا. تأكد من أن الكاميرا متصلة وليست مستخدمة بواسطة تطبيق آخر.")
+        else:
+            st_frame = st.empty()
+            while cap.isOpened():
+                ret, frame = cap.read()
+                if not ret:
+                    break
 
+                try:
+                    annotated_frame = frame
+                    for model in yolo_models:
+                        results = model.predict(frame, device='cuda' if torch.cuda.is_available() else 'cpu', conf=0.5, verbose=False)
+                        annotated_frame = np.array(results[0].plot())
+
+                    # عرض الإطار المعالج
+                    st_frame.image(annotated_frame, channels="BGR")
+                except Exception as e:
+                    st.error(f"خطأ في معالجة إطار الكاميرا: {e}")
+                    break
+
+            cap.release()
+            cv2.destroyAllWindows()
