@@ -171,31 +171,3 @@ if uploaded_file is not None:
             st.error("مكتبة numpy غير متاحة، لا يمكن تحليل الصورة.")
         else:
             st.error("فشل في تحميل النماذج، يرجى المحاولة لاحقاً.")
-
-# زر لتشغيل الكاميرا وتحليل الفيديو المباشر
-if cv2_available and yolo_models:
-    if st.button("تشغيل الكاميرا"):
-        cap = cv2.VideoCapture(0)
-        if not cap.isOpened():
-            st.error("فشل في فتح الكاميرا. تأكد من أن الكاميرا متصلة وليست مستخدمة بواسطة تطبيق آخر.")
-        else:
-            st_frame = st.empty()
-            while cap.isOpened():
-                ret, frame = cap.read()
-                if not ret:
-                    break
-
-                try:
-                    annotated_frame = frame
-                    for model in yolo_models:
-                        results = model.predict(frame, device='cuda' if torch.cuda.is_available() else 'cpu', conf=0.5, verbose=False)
-                        annotated_frame = np.array(results[0].plot())
-
-                    # عرض الإطار المعالج
-                    st_frame.image(annotated_frame, channels="BGR")
-                except Exception as e:
-                    st.error(f"خطأ في معالجة إطار الكاميرا: {e}")
-                    break
-
-            cap.release()
-            cv2.destroyAllWindows()
