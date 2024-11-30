@@ -16,7 +16,7 @@ if 'models' not in st.session_state:
     model_paths = [
         'https://huggingface.co/spaces/Hussam54545/video-analysis-app/resolve/main/best_v11_100epoch.pt',
         'https://github.com/Hussam247824/project/blob/master/best100epochs.pt',
-        'https://huggingface.co/spaces/Hussam54545/video-analysis-app/resolve/main/best100epochs.pt'
+        'https://github.com/Hussam247824/project/blob/master/best_v11_100epoch.pt'
     ]
 
     models = []
