@@ -35,7 +35,8 @@ def analyze_image(image_path):
         # تمرير الصورة عبر النماذج الثلاثة
         for model in yolo_models:
             results = model.predict(image, device=device, conf=0.5, verbose=False)
-            annotated_image = results[0].plot()
+            for result in results:
+                annotated_image = result.plot()
 
         return annotated_image
     except Exception as e:
