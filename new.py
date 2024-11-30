@@ -29,7 +29,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 # دالة لتحليل الفيديو باستخدام النماذج الثلاثة
 def analyze_video(video_path, output_video_path):
     device = 'cuda' if torch and torch.cuda.is_available() else 'cpu'
-    st.write(f"باستخدام الجهاز: {device}")
+    
     
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
@@ -53,7 +53,7 @@ def analyze_video(video_path, output_video_path):
             # تمرير الفيديو عبر النماذج الثلاثة
             for model in yolo_models:
                 results = model.predict(frame, device=device, conf=0.5, verbose=False)
-                st.text(f"نتائج التنبؤ للإطار {frame_count}: {results}")
+                
                 annotated_frame = np.array(results[0].plot())
 
             out.write(annotated_frame)
@@ -69,7 +69,7 @@ def analyze_video(video_path, output_video_path):
 # دالة لتحليل الصور باستخدام النماذج الثلاثة
 def analyze_image(image_path, output_image_path):
     device = 'cuda' if torch and torch.cuda.is_available() else 'cpu'
-    st.write(f"باستخدام الجهاز: {device}")
+    
     
     image = cv2.imread(image_path)
     if image is None:
@@ -80,7 +80,7 @@ def analyze_image(image_path, output_image_path):
         # تمرير الصورة عبر النماذج الثلاثة
         for model in yolo_models:
             results = model.predict(image, device=device, conf=0.5, verbose=False)
-            st.text(f"نتائج التنبؤ للصورة: {results}")
+            
             annotated_image = np.array(results[0].plot())
 
         # حفظ الصورة المعالجة
