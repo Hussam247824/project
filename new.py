@@ -31,12 +31,11 @@ def analyze_image(image_path):
         raise Exception("فشل في فتح ملف الصورة.")
 
     try:
-        annotated_image = image
+        annotated_image = image.copy()
         # تمرير الصورة عبر النماذج الثلاثة
         for model in yolo_models:
             results = model.predict(image, device=device, conf=0.5, verbose=False)
-            for result in results:
-                annotated_image = result.plot()
+            annotated_image = results[0].plot()
 
         return annotated_image
     except Exception as e:
