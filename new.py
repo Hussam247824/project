@@ -1,109 +1,79 @@
 import streamlit as st
 import os
-import torch
-import tempfile
-import mimetypes
 import requests
-import numpy as np
+import tempfile
+import cv2
+from PIL import Image, ImageDraw
+from ultralytics import YOLO
+import torch
 
-# استخدام opencv-python-headless لتجنب مشاكل libGL
-cv2_available = False
-try:
-    import cv2
-    cv2_available = True
-except ImportError:
-    st.warning("مكتبة 'opencv-python-headless' غير مثبتة بشكل صحيح. يرجى التأكد من تثبيتها عبر requirements.txt.")
+# إعداد مسار حفظ الملفات
+UPLOAD_FOLDER = 'uploads/'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# التحقق من مكتبة numpy
-numpy_available = True
-try:
-    _ = np.array([1])
-except ImportError as e:
-    st.error("فشل في تحميل مكتبة numpy: يرجى التأكد من تثبيتها بشكل صحيح.")
-    numpy_available = False
+# تحميل النماذج مرة واحدة فقط
+if 'models' not in st.session_state:
+    model_paths = [
+        'https://huggingface.co/spaces/Hussam54545/video-analysis-app/resolve/main/best_v11_100epoch.pt',
+        'https://huggingface.co/spaces/Hussam54545/video-analysis-app/resolve/main/best(3).pt',
+        'https://huggingface.co/spaces/Hussam54545/video-analysis-app/resolve/main/best100epochs.pt'
+    ]
 
-# دالة لتحليل الصور باستخدام النماذج الثلاثة
-def analyze_image(image_path):
-    device = 'cuda' if torch and torch.cuda.is_available() else 'cpu'
-    
-    image = cv2.imread(image_path)
-    if image is None:
-        raise Exception("فشل في فتح ملف الصورة.")
-
-    try:
-        annotated_image = image.copy()
-        # تمرير الصورة عبر النماذج الثلاثة
-        for model in yolo_models:
-            results = model.predict(image, device=device, conf=0.5, verbose=False)
-            annotated_image = results[0].plot()
-
-        return annotated_image
-    except Exception as e:
-        st.error(f"خطأ في معالجة الصورة: {e}")
-        return None
-
-# تحميل نماذج YOLOv8 المدربة من مستودع GitHub
-model_urls = [
-    'https://github.com/Hussam247824/project/raw/master/best(3).pt',
-    'https://github.com/Hussam247824/project/raw/master/best_v11_100epoch.pt',
-    'https://github.com/Hussam247824/project/raw/master/best100epochs.pt'
-]
-
-yolo_models = []
-if numpy_available:
-    for url in model_urls:
-        model_name = url.split('/')[-1]
-        model_path = os.path.join(tempfile.gettempdir(), model_name)
-        
-        # تنزيل النموذج إذا لم يكن موجودًا محليًا
-        if not os.path.exists(model_path):
-            try:
-                response = requests.get(url)
-                if response.status_code == 200:
-                    with open(model_path, 'wb') as f:
-                        f.write(response.content)
-                else:
-                    continue
-            except Exception as e:
-                continue
-
-        # تحميل النموذج
+    models = []
+    for model_path in model_paths:
         try:
-            from ultralytics import YOLO
-            model = YOLO(model_path).to('cuda' if torch.cuda.is_available() else 'cpu')
-            yolo_models.append(model)
+            model_name = model_path.split('/')[-1]
+            model_local_path = os.path.join(UPLOAD_FOLDER, model_name)
+
+            # تنزيل النموذج إذا لم يكن موجودًا محليًا
+            if not os.path.exists(model_local_path):
+                response = requests.get(model_path)
+                if response.status_code == 200:
+                    with open(model_local_path, 'wb') as f:
+                        f.write(response.content)
+
+            # تحميل النموذج
+            model = YOLO(model_local_path).to('cuda' if torch.cuda.is_available() else 'cpu')
+            models.append(model)
         except Exception as e:
-            continue
+            st.error(f"فشل في تحميل النموذج {model_path}: {e}")
+            st.stop()
 
-# الصفحة الرئيسية لرفع الصور
-st.title("رفع صورة لتحليلها")
+    # تخزين النماذج في session_state لتجنب تحميلها مرة أخرى
+    st.session_state.models = models
 
-# نموذج لرفع الصورة
-uploaded_file = st.file_uploader("اختر صورة لرفعها وتحليلها", type=["jpg", "jpeg", "png"])
+# الصفحة الرئيسية لرفع الصور والفيديوهات وتحليلها
+st.title("رفع صورة أو مقطع فيديو لتحليله باستخدام نماذج YOLOv8")
 
-# معالجة رفع الصورة وتحليلها
-if uploaded_file is not None:
-    mime_type, _ = mimetypes.guess_type(uploaded_file.name)
-    if not mime_type:
-        st.error("يرجى رفع ملف صحيح.")
-    elif mime_type.startswith('image'):
-        # حفظ الصورة المرفوعة في مجلد مؤقت
-        with tempfile.NamedTemporaryFile(delete=True, suffix='.jpg') as tmp_file:
-            tmp_file.write(uploaded_file.read())
-            image_path = tmp_file.name
-
-        # تحليل الصورة إذا كانت النماذج محملة وcv2 وnumpy متاحة
-        if yolo_models and cv2_available and numpy_available:
-            try:
-                annotated_image = analyze_image(image_path)
-                if annotated_image is not None:
-                    st.success("تم تحليل الصورة بنجاح!")
-                    st.image(annotated_image, channels="BGR")
-            except Exception as e:
-                st.error("حدث خطأ أثناء تحليل الصورة، يرجى المحاولة لاحقًا.")
-        elif not cv2_available:
-            st.error("مكتبة OpenCV غير متاحة، لا يمكن تحليل الصورة.")
-        elif not numpy_available:
-            st.error("مكتبة numpy غير متاحة، لا يمكن تحليل الصورة.")
-        else:
-            st.error("فشل في تحميل النماذج، يرجى المحاولة لاحقاً.")
+# زر لتشغيل الكاميرا
+if st.button('تشغيل الكاميرا الأمامية'):
+    # HTML5 و JavaScript لفتح الكاميرا وعرض الفيديو في الوقت الفعلي
+    camera_html = """
+    <html>
+    <head>
+        <style>
+            video {
+                width: 100%;
+                border: 2px solid black;
+            }
+        </style>
+    </head>
+    <body>
+        <h2>كاميرا الويب</h2>
+        <video id="video" autoplay></video>
+        <script>
+            const video = document.getElementById('video');
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    video.srcObject = stream;
+                    // هنا يمكنك إضافة الكود لتمرير الفيديو عبر النماذج بعد التقاطه
+                })
+                .catch(err => {
+                    console.log("حدث خطأ: " + err);
+                    alert("فشل في الوصول إلى الكاميرا.");
+                });
+        </script>
+    </body>
+    </html>
+    """
+    st.components.v1.html(camera_html, height=500)
