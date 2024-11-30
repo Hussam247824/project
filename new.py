@@ -7,11 +7,12 @@ import requests
 import numpy as np
 
 # استخدام opencv-python-headless لتجنب مشاكل libGL
+cv2_available = False
 try:
     import cv2
+    cv2_available = True
 except ImportError:
-    st.error("مكتبة 'opencv-python-headless' غير مثبتة بشكل صحيح. يرجى التأكد من تثبيتها عبر requirements.txt.")
-    st.stop()
+    st.warning("مكتبة 'opencv-python-headless' غير مثبتة بشكل صحيح. يرجى التأكد من تثبيتها عبر requirements.txt.")
 
 # تحديد المسار لحفظ الملفات المرفوعة
 UPLOAD_FOLDER = 'uploads/'
@@ -74,8 +75,8 @@ if uploaded_video is not None:
         st.video(uploaded_video)
         st.write(f"تم حفظ الفيديو في المسار: {video_path}")
 
-        # تحليل الفيديو إذا كانت النماذج محملة
-        if yolo_models:
+        # تحليل الفيديو إذا كانت النماذج محملة وcv2 متاح
+        if yolo_models and cv2_available:
             try:
                 output_video_path = os.path.join(UPLOAD_FOLDER, 'output_video.mp4')
                 analyze_video(video_path, output_video_path)
@@ -83,6 +84,8 @@ if uploaded_video is not None:
                 st.video(output_video_path)
             except Exception as e:
                 st.error(f"حدث خطأ أثناء تحليل الفيديو: {e}")
+        elif not cv2_available:
+            st.error("مكتبة OpenCV غير متاحة، لا يمكن تحليل الفيديو.")
         else:
             st.error("فشل في تحميل النماذج، يرجى المحاولة لاحقاً.")
 
