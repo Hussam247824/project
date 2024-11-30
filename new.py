@@ -4,6 +4,7 @@ import torch
 import tempfile
 import mimetypes
 import requests
+import numpy as np
 
 # استخدام opencv-python-headless لتجنب مشاكل libGL
 try:
@@ -112,7 +113,7 @@ def analyze_video(video_path, output_video_path):
             for model in yolo_models:
                 results = model.predict(frame, device=device, conf=0.5, verbose=False)
                 st.text(f"نتائج التنبؤ للإطار {frame_count}: {results}")
-                annotated_frame = results[0].plot()
+                annotated_frame = np.array(results[0].plot())
 
             out.write(annotated_frame)
             frame_count += 1
