@@ -14,6 +14,14 @@ try:
 except ImportError:
     st.warning("مكتبة 'opencv-python-headless' غير مثبتة بشكل صحيح. يرجى التأكد من تثبيتها عبر requirements.txt.")
 
+# التحقق من مكتبة numpy
+numpy_available = True
+try:
+    _ = np.array([1])
+except ImportError as e:
+    st.error("فشل في تحميل مكتبة numpy: يرجى التأكد من تثبيتها بشكل صحيح.")
+    numpy_available = False
+
 # تحديد المسار لحفظ الملفات المرفوعة
 UPLOAD_FOLDER = 'uploads/'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -26,34 +34,35 @@ model_urls = [
 ]
 
 yolo_models = []
-for url in model_urls:
-    model_name = url.split('/')[-1]
-    model_path = os.path.join(UPLOAD_FOLDER, model_name)
-    
-    # تنزيل النموذج إذا لم يكن موجودًا محليًا
-    if not os.path.exists(model_path):
-        try:
-            st.info(f"جاري تنزيل النموذج: {model_name}")
-            response = requests.get(url)
-            if response.status_code == 200:
-                with open(model_path, 'wb') as f:
-                    f.write(response.content)
-                st.success(f"تم تنزيل النموذج بنجاح: {model_name}")
-            else:
-                st.error(f"فشل في تنزيل النموذج {model_name}: حالة الاستجابة {response.status_code}")
+if numpy_available:
+    for url in model_urls:
+        model_name = url.split('/')[-1]
+        model_path = os.path.join(UPLOAD_FOLDER, model_name)
+        
+        # تنزيل النموذج إذا لم يكن موجودًا محليًا
+        if not os.path.exists(model_path):
+            try:
+                st.info(f"جاري تنزيل النموذج: {model_name}")
+                response = requests.get(url)
+                if response.status_code == 200:
+                    with open(model_path, 'wb') as f:
+                        f.write(response.content)
+                    st.success(f"تم تنزيل النموذج بنجاح: {model_name}")
+                else:
+                    st.error(f"فشل في تنزيل النموذج {model_name}: حالة الاستجابة {response.status_code}")
+                    continue
+            except Exception as e:
+                st.error(f"فشل في تنزيل النموذج {model_name}: {e}")
                 continue
-        except Exception as e:
-            st.error(f"فشل في تنزيل النموذج {model_name}: {e}")
-            continue
 
-    # تحميل النموذج
-    try:
-        from ultralytics import YOLO
-        model = YOLO(model_path).to('cuda' if torch.cuda.is_available() else 'cpu')
-        yolo_models.append(model)
-        st.success(f"تم تحميل النموذج بنجاح: {model_name}")
-    except Exception as e:
-        st.error(f"فشل في تحميل النموذج {model_name}: {e}")
+        # تحميل النموذج
+        try:
+            from ultralytics import YOLO
+            model = YOLO(model_path).to('cuda' if torch.cuda.is_available() else 'cpu')
+            yolo_models.append(model)
+            st.success(f"تم تحميل النموذج بنجاح: {model_name}")
+        except Exception as e:
+            st.error(f"فشل في تحميل النموذج {model_name}: {e}")
 
 # الصفحة الرئيسية لرفع الفيديو أو تشغيل الكاميرا
 st.title("رفع فيديو لتحليله أو تشغيل الكاميرا")
@@ -75,8 +84,8 @@ if uploaded_video is not None:
         st.video(uploaded_video)
         st.write(f"تم حفظ الفيديو في المسار: {video_path}")
 
-        # تحليل الفيديو إذا كانت النماذج محملة وcv2 متاح
-        if yolo_models and cv2_available:
+        # تحليل الفيديو إذا كانت النماذج محملة وcv2 وnumpy متاحة
+        if yolo_models and cv2_available and numpy_available:
             try:
                 output_video_path = os.path.join(UPLOAD_FOLDER, 'output_video.mp4')
                 analyze_video(video_path, output_video_path)
@@ -86,6 +95,8 @@ if uploaded_video is not None:
                 st.error(f"حدث خطأ أثناء تحليل الفيديو: {e}")
         elif not cv2_available:
             st.error("مكتبة OpenCV غير متاحة، لا يمكن تحليل الفيديو.")
+        elif not numpy_available:
+            st.error("مكتبة numpy غير متاحة، لا يمكن تحليل الفيديو.")
         else:
             st.error("فشل في تحميل النماذج، يرجى المحاولة لاحقاً.")
 
