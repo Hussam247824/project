@@ -4,7 +4,12 @@ import torch
 import tempfile
 import mimetypes
 import requests
-import cv2
+
+# استخدام opencv-python-headless لتجنب مشاكل libGL
+try:
+    import cv2
+except ImportError:
+    st.error("مكتبة 'opencv-python-headless' غير مثبتة بشكل صحيح. يرجى التأكد من تثبيتها.")
 
 # تحديد المسار لحفظ الملفات المرفوعة
 UPLOAD_FOLDER = 'uploads/'
