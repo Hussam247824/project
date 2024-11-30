@@ -88,7 +88,7 @@ if uploaded_video is not None:
         if yolo_models and cv2_available and numpy_available:
             try:
                 output_video_path = os.path.join(UPLOAD_FOLDER, 'output_video.mp4')
-                analyze_video(video_path, output_video_path)
+                analyze_video_defined(video_path, output_video_path)
                 st.success("تم تحليل الفيديو بنجاح!")
                 st.video(output_video_path)
             except Exception as e:
@@ -101,7 +101,7 @@ if uploaded_video is not None:
             st.error("فشل في تحميل النماذج، يرجى المحاولة لاحقاً.")
 
 # دالة لتحليل الفيديو باستخدام النماذج الثلاثة
-def analyze_video(video_path, output_video_path):
+def analyze_video_defined(video_path, output_video_path):
     device = 'cuda' if torch and torch.cuda.is_available() else 'cpu'
     st.write(f"باستخدام الجهاز: {device}")
     
