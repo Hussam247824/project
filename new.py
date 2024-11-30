@@ -26,6 +26,46 @@ except ImportError as e:
 UPLOAD_FOLDER = 'uploads/'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+# دالة لتحليل الفيديو باستخدام النماذج الثلاثة
+def analyze_video(video_path, output_video_path):
+    device = 'cuda' if torch and torch.cuda.is_available() else 'cpu'
+    st.write(f"باستخدام الجهاز: {device}")
+    
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        raise Exception("فشل في فتح ملف الفيديو.")
+
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    out = cv2.VideoWriter(output_video_path, fourcc, fps, (width, height))
+
+    frame_count = 0
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        try:
+            annotated_frame = frame
+            # تمرير الفيديو عبر النماذج الثلاثة
+            for model in yolo_models:
+                results = model.predict(frame, device=device, conf=0.5, verbose=False)
+                st.text(f"نتائج التنبؤ للإطار {frame_count}: {results}")
+                annotated_frame = np.array(results[0].plot())
+
+            out.write(annotated_frame)
+            frame_count += 1
+        except Exception as e:
+            st.error(f"خطأ في معالجة الإطار {frame_count}: {e}")
+            break
+
+    cap.release()
+    out.release()
+    cv2.destroyAllWindows()
+
 # تحميل نماذج YOLOv8 المدربة من مستودع GitHub
 model_urls = [
     'https://github.com/Hussam247824/project/raw/master/best(3).pt',
@@ -99,46 +139,6 @@ if uploaded_video is not None:
             st.error("مكتبة numpy غير متاحة، لا يمكن تحليل الفيديو.")
         else:
             st.error("فشل في تحميل النماذج، يرجى المحاولة لاحقاً.")
-
-# دالة لتحليل الفيديو باستخدام النماذج الثلاثة
-def analyze_video(video_path, output_video_path):
-    device = 'cuda' if torch and torch.cuda.is_available() else 'cpu'
-    st.write(f"باستخدام الجهاز: {device}")
-    
-    cap = cv2.VideoCapture(video_path)
-    if not cap.isOpened():
-        raise Exception("فشل في فتح ملف الفيديو.")
-
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-    out = cv2.VideoWriter(output_video_path, fourcc, fps, (width, height))
-
-    frame_count = 0
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-
-        try:
-            annotated_frame = frame
-            # تمرير الفيديو عبر النماذج الثلاثة
-            for model in yolo_models:
-                results = model.predict(frame, device=device, conf=0.5, verbose=False)
-                st.text(f"نتائج التنبؤ للإطار {frame_count}: {results}")
-                annotated_frame = np.array(results[0].plot())
-
-            out.write(annotated_frame)
-            frame_count += 1
-        except Exception as e:
-            st.error(f"خطأ في معالجة الإطار {frame_count}: {e}")
-            break
-
-    cap.release()
-    out.release()
-    cv2.destroyAllWindows()
 
 # تأكد من أن المكتبات النظامية المطلوبة مثبتة
 st.info("إذا استمرت المشكلة، يرجى التأكد من أن مكتبات النظام مثل libgl1-mesa-glx مثبتة بشكل صحيح باستخدام ملف apt.txt.")
