@@ -14,7 +14,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 # تحميل النماذج مرة واحدة فقط
 if 'models' not in st.session_state:
     model_paths = [
-        'https://huggingface.co/spaces/Hussam54545/video-analysis-app/resolve/main/best_v11_100epoch.pt',
+        'https://github.com/Hussam247824/project/blob/master/best(3).pt',
         'https://github.com/Hussam247824/project/blob/master/best100epochs.pt',
         'https://github.com/Hussam247824/project/blob/master/best_v11_100epoch.pt'
     ]
