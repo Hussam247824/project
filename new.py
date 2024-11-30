@@ -22,26 +22,16 @@ except ImportError as e:
     st.error("فشل في تحميل مكتبة numpy: يرجى التأكد من تثبيتها بشكل صحيح.")
     numpy_available = False
 
-# تحديد المسار لحفظ الملفات المرفوعة
-UPLOAD_FOLDER = 'uploads/'
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
 # دالة لتحليل الفيديو باستخدام النماذج الثلاثة
-def analyze_video(video_path, output_video_path):
+def analyze_video(video_path):
     device = 'cuda' if torch and torch.cuda.is_available() else 'cpu'
     
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise Exception("فشل في فتح ملف الفيديو.")
 
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-    out = cv2.VideoWriter(output_video_path, fourcc, fps, (width, height))
-
     frame_count = 0
+    frames = []
     while True:
         ret, frame = cap.read()
         if not ret:
@@ -55,17 +45,17 @@ def analyze_video(video_path, output_video_path):
                 
                 annotated_frame = np.array(results[0].plot())
 
-            out.write(annotated_frame)
+            frames.append(annotated_frame)
             frame_count += 1
         except Exception as e:
             break
 
     cap.release()
-    out.release()
     cv2.destroyAllWindows()
+    return frames
 
 # دالة لتحليل الصور باستخدام النماذج الثلاثة
-def analyze_image(image_path, output_image_path):
+def analyze_image(image_path):
     device = 'cuda' if torch and torch.cuda.is_available() else 'cpu'
     
     image = cv2.imread(image_path)
@@ -80,10 +70,10 @@ def analyze_image(image_path, output_image_path):
             
             annotated_image = np.array(results[0].plot())
 
-        # حفظ الصورة المعالجة
-        cv2.imwrite(output_image_path, annotated_image)
+        return annotated_image
     except Exception as e:
         st.error(f"خطأ في معالجة الصورة: {e}")
+        return None
 
 # تحميل نماذج YOLOv8 المدربة من مستودع GitHub
 model_urls = [
@@ -96,7 +86,7 @@ yolo_models = []
 if numpy_available:
     for url in model_urls:
         model_name = url.split('/')[-1]
-        model_path = os.path.join(UPLOAD_FOLDER, model_name)
+        model_path = os.path.join(tempfile.gettempdir(), model_name)
         
         # تنزيل النموذج إذا لم يكن موجودًا محليًا
         if not os.path.exists(model_path):
@@ -138,10 +128,10 @@ if uploaded_file is not None:
         # تحليل الفيديو إذا كانت النماذج محملة وcv2 وnumpy متاحة
         if yolo_models and cv2_available and numpy_available:
             try:
-                output_video_path = os.path.join(UPLOAD_FOLDER, 'output_video.mp4')
-                analyze_video(video_path, output_video_path)
+                frames = analyze_video(video_path)
                 st.success("تم تحليل الفيديو بنجاح!")
-                st.video(output_video_path)
+                for frame in frames:
+                    st.image(frame, channels="BGR")
             except Exception as e:
                 st.error(f"حدث خطأ أثناء تحليل الفيديو: {e}")
         elif not cv2_available:
@@ -159,10 +149,10 @@ if uploaded_file is not None:
         # تحليل الصورة إذا كانت النماذج محملة وcv2 وnumpy متاحة
         if yolo_models and cv2_available and numpy_available:
             try:
-                output_image_path = os.path.join(UPLOAD_FOLDER, 'output_image.jpg')
-                analyze_image(image_path, output_image_path)
-                st.success("تم تحليل الصورة بنجاح!")
-                st.image(output_image_path)
+                annotated_image = analyze_image(image_path)
+                if annotated_image is not None:
+                    st.success("تم تحليل الصورة بنجاح!")
+                    st.image(annotated_image, channels="BGR")
             except Exception as e:
                 st.error(f"حدث خطأ أثناء تحليل الصورة: {e}")
         elif not cv2_available:
