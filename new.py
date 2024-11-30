@@ -100,7 +100,7 @@ if uploaded_file is not None:
                     st.success("تم تحليل الصورة بنجاح!")
                     st.image(annotated_image, channels="BGR")
             except Exception as e:
-                st.error(f"حدث خطأ أثناء تحليل الصورة: {e}")
+                st.error("حدث خطأ أثناء تحليل الصورة، يرجى المحاولة لاحقًا.")
         elif not cv2_available:
             st.error("مكتبة OpenCV غير متاحة، لا يمكن تحليل الصورة.")
         elif not numpy_available:
