@@ -88,7 +88,7 @@ if uploaded_file is not None:
         st.error("يرجى رفع ملف صحيح.")
     elif mime_type.startswith('image'):
         # حفظ الصورة المرفوعة في مجلد مؤقت
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp_file:
+        with tempfile.NamedTemporaryFile(delete=True, suffix='.jpg') as tmp_file:
             tmp_file.write(uploaded_file.read())
             image_path = tmp_file.name
 
