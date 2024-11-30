@@ -10,7 +10,7 @@ import numpy as np
 try:
     import cv2
 except ImportError:
-    st.error("مكتبة 'opencv-python-headless' غير مثبتة بشكل صحيح. يرجى التأكد من تثبيتها.")
+    st.error("مكتبة 'opencv-python-headless' غير مثبتة بشكل صحيح. يرجى التأكد من تثبيتها عبر requirements.txt.")
     st.stop()
 
 # تحديد المسار لحفظ الملفات المرفوعة
